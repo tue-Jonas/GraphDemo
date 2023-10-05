@@ -7,9 +7,15 @@ import com.brunomnsilva.smartgraph.graphview.SmartGraphPanel;
 import com.brunomnsilva.smartgraph.graphview.SmartPlacementStrategy;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.scene.control.Button;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.*;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
+import javafx.util.Callback;
+import javafx.util.Pair;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * @author Jonas Tuechler
@@ -35,12 +41,12 @@ public class GraphView {
         contentZoomPane = new ContentZoomPane(smartGraphPanel);
         contentZoomPane.setStyle("-fx-background-color: #F4FFFB");
 
-        // Create "Test" Button
-        Button testButton = new Button("Test");
-        testButton.setOnAction(new TestEventHandler());
+        // Create "Shortest Path" Button
+        Button spButton = new Button("Shortest Path");
+        spButton.setOnAction(new SPEventHandler());
 
         // Create Toolbar
-        ToolBar toolBar = new ToolBar(testButton);
+        ToolBar toolBar = new ToolBar(spButton);
 
         contentZoomPane.setTop(toolBar);
     }
@@ -56,17 +62,64 @@ public class GraphView {
         return contentZoomPane;
     }
 
-    private void testActionMethod() {
-        Vertex<VertexData> foundVertex = graphControl.findFirstVertexByName("C");
-        if (foundVertex != null) {
-            smartGraphPanel.getStylableVertex(foundVertex).setStyleClass("htlVertex");
+    private List<String> getVertexLabels() {
+        List<String> vertexLabels = new ArrayList<>();
+        for (Vertex<VertexData> vertex : graphControl.getGraph().vertices()) {
+            vertexLabels.add(vertex.element().getName());
         }
+        return vertexLabels;
     }
 
-    private class TestEventHandler implements EventHandler<ActionEvent> {
+    private void spActionMethod() {
+        // Create the custom dialog
+        Dialog<Pair<String, String>> dialog = new Dialog<>();
+        dialog.setTitle("Find the Shortest Path");
+        dialog.setHeaderText("Select the source and target vertices:");
+
+        // Set the button types
+        ButtonType findButtonType = new ButtonType("Find", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(findButtonType, ButtonType.CANCEL);
+
+        // Create the source and target labels and fields
+        ComboBox<String> sourceComboBox = new ComboBox<>();
+        ComboBox<String> targetComboBox = new ComboBox<>();
+
+        // Populate ComboBoxes with vertex labels (assuming you have a method getVertexLabels() to obtain vertex labels)
+        sourceComboBox.getItems().addAll(getVertexLabels());
+        targetComboBox.getItems().addAll(getVertexLabels());
+
+        GridPane grid = new GridPane();
+        grid.add(new Label("Source Vertex:"), 0, 0);
+        grid.add(sourceComboBox, 1, 0);
+        grid.add(new Label("Target Vertex:"), 0, 1);
+        grid.add(targetComboBox, 1, 1);
+
+        dialog.getDialogPane().setContent(grid);
+
+        // Convert the result to a Pair<String, String> when the find button is clicked
+        dialog.setResultConverter(new Callback<ButtonType, Pair<String, String>>() {
+            @Override
+            public Pair<String, String> call(ButtonType buttonType) {
+                if (buttonType == findButtonType) {
+                    return new Pair<>(sourceComboBox.getValue(), targetComboBox.getValue());
+                }
+                return null;
+            }
+        });
+
+        // Process the result
+        Optional<Pair<String, String>> result = dialog.showAndWait();
+
+        result.ifPresent(pair -> {
+            System.out.println(graphControl.findShortestPath(pair.getKey(), pair.getValue()));
+        });
+    }
+
+
+    private class SPEventHandler implements EventHandler<ActionEvent> {
         @Override
         public void handle(ActionEvent event) {
-            testActionMethod();
+            spActionMethod();
         }
     }
 
