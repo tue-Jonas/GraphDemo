@@ -7,6 +7,7 @@ import com.brunomnsilva.smartgraph.graphview.SmartGraphPanel;
 import com.brunomnsilva.smartgraph.graphview.SmartPlacementStrategy;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
@@ -73,11 +74,11 @@ public class GraphView {
     private void spActionMethod() {
         // Create the custom dialog
         Dialog<Pair<String, String>> dialog = new Dialog<>();
-        dialog.setTitle("Find the Shortest Path");
+        dialog.setTitle("Find the shortest path");
         dialog.setHeaderText("Select the source and target vertices:");
 
         // Set the button types
-        ButtonType findButtonType = new ButtonType("Find", ButtonBar.ButtonData.OK_DONE);
+        ButtonType findButtonType = new ButtonType("Route", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(findButtonType, ButtonType.CANCEL);
 
         // Create the source and target labels and fields
@@ -88,11 +89,18 @@ public class GraphView {
         sourceComboBox.getItems().addAll(getVertexLabels());
         targetComboBox.getItems().addAll(getVertexLabels());
 
+        // source and target labels
+        Label sourceLabel = new Label("Source:");
+        Label targetLabel = new Label("Target:");
+
         GridPane grid = new GridPane();
-        grid.add(new Label("Source Vertex:"), 0, 0);
+        grid.add(sourceLabel, 0, 0);
         grid.add(sourceComboBox, 1, 0);
-        grid.add(new Label("Target Vertex:"), 0, 1);
+        grid.add(targetLabel, 0, 1);
         grid.add(targetComboBox, 1, 1);
+
+        GridPane.setMargin(targetLabel, new Insets(10, 10, 0, 0));
+        GridPane.setMargin(targetComboBox, new Insets(10, 0, 0, 0));
 
         dialog.getDialogPane().setContent(grid);
 
@@ -111,7 +119,25 @@ public class GraphView {
         Optional<Pair<String, String>> result = dialog.showAndWait();
 
         result.ifPresent(pair -> {
-            System.out.println(graphControl.findShortestPath(pair.getKey(), pair.getValue()));
+            List<Vertex<VertexData>> path = graphControl.findShortestPath(pair.getKey(), pair.getValue());
+            if (path != null) {
+                StringBuilder pathStr = new StringBuilder("Shortest path: ");
+                for (Vertex<VertexData> vertex : path) {
+                    pathStr.append(vertex.element().getName()).append(" -> ");
+                }
+                pathStr.delete(pathStr.length() - 4, pathStr.length());
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Shortest Path Result");
+                alert.setHeaderText(null);
+                alert.setContentText(pathStr.toString());
+                alert.showAndWait();
+            } else {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("No Path Found");
+                alert.setHeaderText(null);
+                alert.setContentText("No path found between " + pair.getKey() + " and " + pair.getValue());
+                alert.showAndWait();
+            }
         });
     }
 
