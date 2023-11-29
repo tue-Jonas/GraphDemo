@@ -81,6 +81,51 @@ public class GraphControl {
         return null;
     }
 
+    /**
+     * Prim's algorithm for finding a minimum spanning tree (MST) of a weighted undirected graph.
+     */
+    public List<Edge<EdgeData, VertexData>> primAlgorithm() {
+        // Create a set to store the vertices included in MST
+        Set<Vertex<VertexData>> mstSet = new HashSet<>();
+
+        // Create a priority queue to store the edges, with their weights as the key
+        PriorityQueue<Edge<EdgeData, VertexData>> pq = new PriorityQueue<>(Comparator.comparingDouble(e -> e.element().getDistance()));
+
+        // Choose an arbitrary vertex to start from
+        Vertex<VertexData> startVertex = graph.vertices().iterator().next();
+        mstSet.add(startVertex);
+
+        // Add all edges of the starting vertex to the priority queue
+        for (Edge<EdgeData, VertexData> edge : graph.incidentEdges(startVertex)) {
+            pq.add(edge);
+        }
+
+        // Create a list to store the edges in the MST
+        List<Edge<EdgeData, VertexData>> mst = new ArrayList<>();
+
+        // While the MST doesn't include all vertices
+        while (mstSet.size() < graph.vertices().size()) {
+            // Get the edge with the smallest weight that connects the MST to a vertex not in the MST
+            Edge<EdgeData, VertexData> minEdge = pq.poll();
+
+            // Get the vertex connected by minEdge that is not in the MST
+            Vertex<VertexData> nextVertex = graph.opposite(mstSet.iterator().next(), minEdge);
+
+            // Add the edge to the MST and the vertex to the MST set
+            mst.add(minEdge);
+            mstSet.add(nextVertex);
+
+            // Add all edges of the vertex to the priority queue
+            for (Edge<EdgeData, VertexData> edge : graph.incidentEdges(nextVertex)) {
+                if (!mstSet.contains(graph.opposite(nextVertex, edge))) {
+                    pq.add(edge);
+                }
+            }
+        }
+
+        return mst;
+    }
+
     public List<Vertex<VertexData>> findShortestPath(String sourceName, String targetName) {
         Vertex<VertexData> source = findFirstVertexByName(sourceName);
         Vertex<VertexData> target = findFirstVertexByName(targetName);
