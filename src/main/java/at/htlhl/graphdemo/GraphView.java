@@ -1,6 +1,7 @@
 package at.htlhl.graphdemo;
 
 import com.brunomnsilva.smartgraph.containers.ContentZoomPane;
+import com.brunomnsilva.smartgraph.graph.Edge;
 import com.brunomnsilva.smartgraph.graph.Vertex;
 import com.brunomnsilva.smartgraph.graphview.SmartCircularSortedPlacementStrategy;
 import com.brunomnsilva.smartgraph.graphview.SmartGraphPanel;
@@ -46,8 +47,12 @@ public class GraphView {
         Button spButton = new Button("Shortest Path");
         spButton.setOnAction(new SPEventHandler());
 
+        // Create "Prim's Algorithm" Button
+        Button primButton = new Button("Prim's Algorithm");
+        primButton.setOnAction(new PrimEventHandler());
+
         // Create Toolbar
-        ToolBar toolBar = new ToolBar(spButton);
+        ToolBar toolBar = new ToolBar(spButton, primButton);
 
         contentZoomPane.setTop(toolBar);
     }
@@ -69,6 +74,30 @@ public class GraphView {
             vertexLabels.add(vertex.element().getName());
         }
         return vertexLabels;
+    }
+
+    private void primActionMethod() {
+        List<Edge<EdgeData, VertexData>> mst = graphControl.primAlgorithm();
+        if (mst != null) {
+            StringBuilder mstStr = new StringBuilder("Minimum Spanning Tree: ");
+            for (Edge<EdgeData, VertexData> edge : mst) {
+                mstStr.append(edge.vertices()[0].element().getName()).append(" - ");
+                mstStr.append(edge.vertices()[1].element().getName()).append(", ");
+                highlightEdge(edge, "blue");
+            }
+            mstStr.delete(mstStr.length() - 2, mstStr.length());
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Prim's Algorithm Result");
+            alert.setHeaderText(null);
+            alert.setContentText(mstStr.toString());
+            alert.showAndWait();
+        } else {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("No MST Found");
+            alert.setHeaderText(null);
+            alert.setContentText("No minimum spanning tree found.");
+            alert.showAndWait();
+        }
     }
 
     private void spActionMethod() {
@@ -141,6 +170,16 @@ public class GraphView {
         });
     }
 
+    public void highlightEdge(Edge<EdgeData, VertexData> edge, String color) {
+        smartGraphPanel.getStylableEdge(edge).setStyle("-fx-stroke: " + color + ";");
+    }
+
+    private class PrimEventHandler implements EventHandler<ActionEvent> {
+        @Override
+        public void handle(ActionEvent event) {
+            primActionMethod();
+        }
+    }
 
     private class SPEventHandler implements EventHandler<ActionEvent> {
         @Override

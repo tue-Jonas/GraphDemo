@@ -85,40 +85,43 @@ public class GraphControl {
      * Prim's algorithm for finding a minimum spanning tree (MST) of a weighted undirected graph.
      */
     public List<Edge<EdgeData, VertexData>> primAlgorithm() {
-        // Create a set to store the vertices included in MST
-        Set<Vertex<VertexData>> mstSet = new HashSet<>();
-
-        // Create a priority queue to store the edges, with their weights as the key
-        PriorityQueue<Edge<EdgeData, VertexData>> pq = new PriorityQueue<>(Comparator.comparingDouble(e -> e.element().getDistance()));
-
-        // Choose an arbitrary vertex to start from
-        Vertex<VertexData> startVertex = graph.vertices().iterator().next();
-        mstSet.add(startVertex);
-
-        // Add all edges of the starting vertex to the priority queue
-        for (Edge<EdgeData, VertexData> edge : graph.incidentEdges(startVertex)) {
-            pq.add(edge);
-        }
-
-        // Create a list to store the edges in the MST
         List<Edge<EdgeData, VertexData>> mst = new ArrayList<>();
 
-        // While the MST doesn't include all vertices
-        while (mstSet.size() < graph.vertices().size()) {
-            // Get the edge with the smallest weight that connects the MST to a vertex not in the MST
-            Edge<EdgeData, VertexData> minEdge = pq.poll();
+        // Priority queue to store the edges with their weights
+        PriorityQueue<Edge<EdgeData, VertexData>> pq = new PriorityQueue<>(
+                Comparator.comparingDouble(edge -> edge.element().getDistance()));
 
-            // Get the vertex connected by minEdge that is not in the MST
-            Vertex<VertexData> nextVertex = graph.opposite(mstSet.iterator().next(), minEdge);
+        // Set to keep track of visited vertices
+        Set<Vertex<VertexData>> visited = new HashSet<>();
 
-            // Add the edge to the MST and the vertex to the MST set
-            mst.add(minEdge);
-            mstSet.add(nextVertex);
+        // Start from any vertex, here we start from the first vertex in the graph
+        if (!graph.vertices().isEmpty()) {
+            Vertex<VertexData> startVertex = graph.vertices().iterator().next();
+            visited.add(startVertex);
 
-            // Add all edges of the vertex to the priority queue
-            for (Edge<EdgeData, VertexData> edge : graph.incidentEdges(nextVertex)) {
-                if (!mstSet.contains(graph.opposite(nextVertex, edge))) {
-                    pq.add(edge);
+            // Add all edges from the starting vertex to the priority queue
+            graph.incidentEdges(startVertex).forEach(pq::add);
+
+            // Expand the MST until all vertices are included
+            while (!pq.isEmpty() && visited.size() < graph.vertices().size()) {
+                Edge<EdgeData, VertexData> edge = pq.poll();
+
+                // Get the vertices connected by the edge
+                Vertex<VertexData> a = graph.vertices().stream().filter(v -> graph.incidentEdges(v).contains(edge)).findFirst().orElse(null);
+                Vertex<VertexData> b = graph.opposite(a, edge);
+
+                // Check if the edge connects to a new vertex
+                Vertex<VertexData> newVertex = visited.contains(a) ? b : a;
+                if (!visited.contains(newVertex)) {
+                    mst.add(edge);
+                    visited.add(newVertex);
+
+                    // Add all new edges from the newly included vertex to the priority queue
+                    for (Edge<EdgeData, VertexData> newEdge : graph.incidentEdges(newVertex)) {
+                        if (!visited.contains(graph.opposite(newVertex, newEdge))) {
+                            pq.add(newEdge);
+                        }
+                    }
                 }
             }
         }
